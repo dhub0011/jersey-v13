@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bupreme v7 — Jersey PDF Generator Pro</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={darkMode:'class',theme:{extend:{fontFamily:{sans:['Inter','ui-sans-serif']},colors:{bupreme:'#0ea5e9'}}}}</script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.2.0/remixicon.min.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { font-family: 'Inter', sans-serif; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #0a0e14; }
+::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #374151; }
+.tab-pane { display: none; }
+.tab-pane.active { display: block; animation: fade .3s ease; }
+@keyframes fade { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
+.toast { animation: slide .3s ease; }
+@keyframes slide { from{opacity:0;transform:translateX(20px)} to{opacity:1;transform:translateX(0)} }
+</style>
+</head>
+<body class="bg-[#0a0e14] text-gray-100 min-h-screen antialiased selection:bg-blue-500/30">
+
+<div id="toastContainer" class="fixed top-4 right-4 z-[200] space-y-2 w-80"></div>
+
+<!-- AUTH SCREEN -->
+<div id="loginScreen" class="min-h-screen flex items-center justify-center p-4 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/20 via-[#0a0e14] to-[#0a0e14]">
+  <div class="w-full max-w-md">
+    <div class="text-center mb-8">
+      <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-500 shadow-xl shadow-blue-900/40 mb-5 ring-1 ring-white/10">
+        <i class="ri-shirt-line text-3xl text-white"></i>
+      </div>
+      <h1 class="text-[32px] font-extrabold tracking-tight">Bupreme v7</h1>
+      <p class="text-gray-400 mt-1.5">Jersey PDF Generator Pro</p>
+    </div>
+    <div class="bg-[#0f141c]/80 backdrop-blur-2xl border border-white/10 rounded-[24px] p-8 shadow-2xl">
+      <!-- Tab toggle -->
+      <div class="flex bg-[#080b11] rounded-xl p-1 mb-6 gap-1">
+        <button id="tabLoginBtn" onclick="switchAuthTab('login')" class="flex-1 py-2 rounded-lg text-sm font-medium bg-white/10 text-white transition">Sign In</button>
+        <button id="tabSignupBtn" onclick="switchAuthTab('signup')" class="flex-1 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white transition">Sign Up</button>
+      </div>
+      <!-- Login Form -->
+      <form id="loginForm" class="space-y-5">
+        <div>
+          <label class="text-sm text-gray-300 mb-1.5 block">Email</label>
+          <div class="relative">
+            <i class="ri-mail-line absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500"></i>
+            <input id="email" type="email" required autocomplete="email" class="w-full bg-[#080b11] border border-white/10 rounded-xl pl-10 pr-4 py-3 outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition" placeholder="you@company.com">
+          </div>
+        </div>
+        <div>
+          <label class="text-sm text-gray-300 mb-1.5 block">Password</label>
+          <div class="relative">
+            <i class="ri-lock-2-line absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500"></i>
+            <input id="password" type="password" required autocomplete="current-password" class="w-full bg-[#080b11] border border-white/10 rounded-xl pl-10 pr-10 py-3 outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition" placeholder="••••••••">
+            <button type="button" onclick="togglePwd('password',this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition" tabindex="-1"><i class="ri-eye-off-line text-base"></i></button>
+          </div>
+        </div>
+        <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 font-semibold py-3.5 rounded-xl transition shadow-lg shadow-blue-900/30 hover:shadow-blue-800/40 active:scale-[0.99]">Sign In</button>
+        <p class="text-center text-sm text-gray-400">Don't have an account? <button type="button" onclick="switchAuthTab('signup')" class="text-blue-400 hover:text-blue-300 font-medium">Sign Up</button></p>
+      </form>
+<div id="progressWrap" class="mt-4 hidden">
+  <div class="flex justify-between text-xs text-gray-400 mb-1"><span id="progressText">Processing...</span><span id="progressPct">0%</span></div>
+  <div class="w-full bg-[#080b11] rounded-full h-2 overflow-hidden"><div id="progressBar" class="h-2 bg-gradient-to-r from-blue-600 to-cyan-500 w-0 transition-all"></div></div>
+  <div id="zipInfo" class="text-xs text-gray-500 mt-2"></div>
+</div>
+
+      <!-- Signup Form -->
+      <form id="signupForm" class="space-y-4 hidden">
+        <div>
+          <label class="text-sm text-gray-300 mb-1.5 block">Full Name</label>
+          <div class="relative">
+            <i class="ri-user-line absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500"></i>
+            <input id="suName" type="text" required class="w-full bg-[#080b11] border border-white/10 rounded-xl pl-10 pr-4 py-3 outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition" placeholder="Your Name">
+          </div>
+        </div>
+        <div>
+          <label class="text-sm text-gray-300 mb-1.5 block">Email</label>
+          <div class="relative">
+            <i class="ri-mail-line absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500"></i>
+            <input id="suEmail" type="email" required class="w-full bg-[#080b11] border border-white/10 rounded-xl pl-10 pr-4 py-3 outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition" placeholder="you@company.com">
+          </div>
+        </div>
+        <div>
+          <label class="text-sm text-gray-300 mb-1.5 block">Phone (optional)</label>
+          <div class="relative">
+            <i class="ri-phone-line absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500"></i>
+            <input id="suPhone" type="tel" class="w-full bg-[#080b11] border border-white/10 rounded-xl pl-10 pr-4 py-3 outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition" placeholder="+91 00000 00000">
+          </div>
+        </div>
+        <div>
+          <label class="text-sm text-gray-300 mb-1.5 block">Password</label>
+          <div class="relative">
+            <i class="ri-lock-2-line absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500"></i>
+            <input id="suPassword" type="password" required minlength="6" class="w-full bg-[#080b11] border border-white/10 rounded-xl pl-10 pr-10 py-3 outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition" placeholder="Min. 6 characters">
+            <button type="button" onclick="togglePwd('suPassword',this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition" tabindex="-1"><i class="ri-eye-off-line text-base"></i></button>
+          </div>
+        </div>
+        <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 font-semibold py-3.5 rounded-xl transition shadow-lg shadow-blue-900/30 active:scale-[0.99]">Create Account</button>
+        <p class="text-center text-sm text-gray-400">Already have an account? <button type="button" onclick="switchAuthTab('login')" class="text-blue-400 hover:text-blue-300 font-medium">Sign In</button></p>
+      </form>
+      <p class="text-[11px] text-gray-500 text-center mt-5">Secure access • v7.0.0</p>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" class="hidden h-screen overflow-hidden">
+  <div class="flex h-full">
+    <aside id="sidebar" class="w-[260px] bg-[#080b11] border-r border-white/[0.06] flex flex-col shrink-0">
+      <div class="p-5 border-b border-white/[0.06]">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-900/30"><i class="ri-shirt-line text-white text-xl"></i></div>
+          <div><div class="font-bold leading-tight">Bupreme v7</div><div class="text-xs text-gray-500" id="sidebarSubtitle">Admin Console</div></div>
+        </div>
+      </div>
+      <nav class="flex-1 overflow-y-auto p-3">
+        <div id="navTabs" class="space-y-1"></div>
+      </nav>
+      <div class="p-3 border-t border-white/[0.06]">
+        <div class="px-3 py-2 mb-2 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+          <div class="text-[11px] text-gray-500">Signed in</div>
+          <div class="text-sm truncate" id="currentUserEmail">—</div>
+        </div>
+        <button id="logoutBtn" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-white/5 text-gray-400 text-sm flex items-center gap-2 transition"><i class="ri-logout-box-r-line"></i> Logout</button>
+      </div>
+    </aside>
+
+    <main class="flex-1 overflow-y-auto bg-[#0a0e14] relative">
+      <div id="clientBanner" class="hidden sticky top-0 z-30 bg-gradient-to-r from-blue-950/80 to-cyan-950/60 backdrop-blur-xl border-b border-blue-900/30">
+        <div class="px-6 md:px-8 py-4 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center"><i class="ri-vip-diamond-line text-cyan-300"></i></div>
+            <div>
+              <div class="font-semibold leading-tight">Client Workspace</div>
+              <div class="text-xs text-cyan-200/70"><span id="clientName"></span> • Unlimited Mode</div>
+            </div>
+          </div>
+          <div class="text-[11px] text-white/40">Powered by Bupreme v7</div>
+        </div>
+      </div>
+
+      <div class="p-6 md:p-8 max-w-[1350px] mx-auto">
+
+        <!-- OVERVIEW -->
+        <div id="tab-overview" class="tab-pane">
+          <div class="flex items-center justify-between mb-6">
+            <div>
+              <h2 class="text-2xl font-bold">Overview</h2>
+              <p class="text-gray-400 text-sm mt-0.5">Production dashboard</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 text-xs border border-emerald-500/20">Live</span>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="bg-[#0f141c] border border-white/5 rounded-2xl p-5"><div class="text-gray-400 text-xs mb-1">PDFs Generated</div><div class="text-3xl font-bold" id="statPDF">0</div><div class="text-xs text-emerald-400 mt-2 flex items-center gap-1"><i class="ri-arrow-up-s-line"></i> Today</div></div>
+            <div class="bg-[#0f141c] border border-white/5 rounded-2xl p-5"><div class="text-gray-400 text-xs mb-1">Active Clients</div><div class="text-3xl font-bold" id="statClients">0</div><div class="text-xs text-gray-500 mt-2">White-label</div></div>
+            <div class="bg-[#0f141c] border border-white/5 rounded-2xl p-5"><div class="text-gray-400 text-xs mb-1">Revenue (INR)</div><div class="text-3xl font-bold" id="statRevenue">₹0</div><div class="text-xs text-gray-500 mt-2">This month</div></div>
+            <div class="bg-[#0f141c] border border-white/5 rounded-2xl p-5"><div class="text-gray-400 text-xs mb-1">Payments Pending</div><div class="text-3xl font-bold" id="statPending">0</div><div class="text-xs text-amber-400 mt-2">Awaiting verification</div></div>
+          </div>
+          <div class="grid lg:grid-cols-3 gap-4">
+            <div class="lg:col-span-2 bg-[#0f141c] border border-white/5 rounded-2xl p-5">
+              <h3 class="font-semibold mb-4 flex items-center gap-2"><i class="ri-flashlight-line text-blue-400"></i> Quick Actions</h3>
+              <div class="grid sm:grid-cols-3 gap-3">
+                <button data-goto="generator" class="goto-btn bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl p-4 text-left transition"><i class="ri-file-pdf-line text-xl text-blue-400"></i><div class="font-medium mt-2">New Batch</div><div class="text-xs text-gray-500">Generate PDFs</div></button>
+                <button data-goto="codes" class="goto-btn bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl p-4 text-left transition"><i class="ri-key-2-line text-xl text-violet-400"></i><div class="font-medium mt-2">Create Code</div><div class="text-xs text-gray-500">License keys</div></button>
+                <button data-goto="clients" class="goto-btn bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl p-4 text-left transition"><i class="ri-user-add-line text-xl text-cyan-400"></i><div class="font-medium mt-2">Add Client</div><div class="text-xs text-gray-500">White-label</div></button>
+              </div>
+            </div>
+            <div class="bg-[#0f141c] border border-white/5 rounded-2xl p-5">
+              <h3 class="font-semibold mb-3">System</h3>
+              <div class="space-y-2.5 text-sm">
+                <div class="flex justify-between"><span class="text-gray-400">Version</span><span>v7.0.0 FINAL</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">UPI ID</span><span class="font-mono text-xs">muhammerihan7775@oksbi</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">Render Ready</span><span class="text-emerald-400">Yes</span></div>
+              </div>
+              <a href="/download-source" class="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-medium transition">
+                <i class="ri-code-s-slash-line text-violet-400"></i> Download Source Code
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- GENERATOR -->
+        <div id="tab-generator" class="tab-pane">
+          <div class="flex items-center justify-between mb-6">
+            <div>
+              <h2 class="text-2xl font-bold">PDF Generator</h2>
+              <p class="text-gray-400 text-sm mt-0.5">Print-ready 300 DPI with blue stripes</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button id="selectAllFiles" class="px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-xs border border-white/10">Select All</button>
+              <button id="clearAllFiles" class="px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-xs border border-white/10">Clear All</button>
+            </div>
+          </div>
+
+          <div class="grid lg:grid-cols-3 gap-5">
+            <div class="lg:col-span-2 space-y-5">
+              <!-- Excel -->
+              <div class="bg-[#0f141c] border border-white/5 rounded-2xl p-5">
+                <h3 class="font-semibold mb-3 flex items-center gap-2"><i class="ri-file-excel-2-line text-emerald-400"></i> Player Data (Excel/CSV)</h3>
+                <label class="block border-2 border-dashed border-white/10 hover:border-blue-500/50 rounded-xl p-6 text-center cursor-pointer transition bg-white/[0.02]">
+                  <input id="excelInput" type="file" accept=".xlsx,.xls,.csv" class="hidden">
+                  <i class="ri-upload-cloud-2-line text-3xl text-gray-500 mb-2"></i>
+                  <div class="font-medium">Drop Excel here or click to upload</div>
+                  <div class="text-xs text-gray-500 mt-1">Auto-detects Name, Number, Size + Position, Team, Color, Font, Notes and more</div>
+                </label>
+                <div id="excelStatus" class="mt-3 text-xs text-gray-400 hidden"></div>
+                <div id="excelAnalysis" class="hidden mt-3 space-y-3"></div>
+              </div>
+
+              <!-- Templates -->
+              <div class="bg-[#0f141c] border border-white/5 rounded-2xl p-5">
+                <h3 class="font-semibold mb-4 flex items-center gap-2"><i class="ri-image-add-line text-blue-400"></i> Template Files (7 Slots)</h3>
+                <div id="fileGrid" class="grid sm:grid-cols-2 gap-3"></div>
+                <p class="text-[11px] text-gray-500 mt-3">PNG recommended • 300 DPI • Transparent background</p>
+              </div>
+
+              <!-- Players -->
+              <div class="bg-[#0f141c] border border-white/5 rounded-2xl p-5">
+                <div class="flex items-center justify-between mb-3">
+                  <h3 class="font-semibold flex items-center gap-2"><i class="ri-team-line text-violet-400"></i> Players <span id="playerCount" class="ml-2 text-xs px-2 py-0.5 bg-white/10 rounded-full">0</span></h3>
+                  <button id="clearPlayers" class="text-xs text-gray-400 hover:text-white">Clear</button>
+                </div>
+                <div class="overflow-auto max-h-[300px] border border-white/5 rounded-xl">
+                  <table class="w-full text-sm">
+                    <thead class="bg-white/[0.03] sticky top-0" id="playerTableHead"><tr class="text-left text-gray-400"><th class="px-3 py-2 font-medium">Name</th><th class="px-3 py-2 font-medium">Number</th><th class="px-3 py-2 font-medium">Size</th></tr></thead>
+                    <tbody id="playerTable" class="divide-y divide-white/5"></tbody>
+                  </table>
+                  <div id="emptyPlayers" class="py-10 text-center text-gray-500 text-sm">No data yet. Upload Excel.</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="space-y-5">
+              <div class="bg-[#0f141c] border border-white/5 rounded-2xl p-5 sticky top-6">
+                <h3 class="font-semibold mb-4">Generate</h3>
+                <div class="mb-3">
+                  <label class="text-xs text-gray-400 mb-1 block">Order ID <span class="text-gray-600">(optional)</span></label>
+                  <input id="orderIdInput" placeholder="e.g. ORD-2025-001" class="w-full bg-[#080b11] border border-white/10 rounded-xl px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-blue-500/40 outline-none">
+                </div>
+                <div class="space-y-3 text-sm">
+                  <div class="flex justify-between"><span class="text-gray-400">Templates selected</span><span id="tplCount" class="font-mono">0/7</span></div>
+                  <div class="flex justify-between"><span class="text-gray-400">Players loaded</span><span id="plyCount" class="font-mono">0</span></div>
+                  <div class="flex justify-between"><span class="text-gray-400">Extra fields</span><span id="extraFieldsCount" class="font-mono text-emerald-400">—</span></div>
+                  <div class="flex justify-between"><span class="text-gray-400">Output</span><span>ZIP + PDFs</span></div>
+                </div>
+                <button id="generateBtn" disabled class="w-full mt-5 bg-gradient-to-r from-blue-600 to-cyan-500 disabled:opacity-40 disabled:cursor-not-allowed font-semibold py-3.5 rounded-xl shadow-lg shadow-blue-900/20 hover:shadow-blue-800/30 transition flex items-center justify-center gap-2">
+                  <i class="ri-flashlight-line"></i> <span id="generateText">Generate PDFs</span>
+                </button>
+                <button id="previewBtn" disabled class="w-full mt-2 bg-white/5 hover:bg-white/10 border border-white/10 disabled:opacity-40 disabled:cursor-not-allowed font-medium py-2.5 rounded-xl transition flex items-center justify-center gap-2 text-sm">
+                  <i class="ri-eye-line"></i> Preview PDFs
+                </button>
+
+                <div id="downloadContainer" class="hidden">
+                  <button id="downloadZipBtn" class="w-full mt-3 bg-green-600 hover:bg-green-500 text-white font-bold py-4 px-6 rounded-2xl text-[17px] flex items-center justify-center gap-3 shadow-lg shadow-green-900/30 transition active:scale-[0.99]">
+                    <i class="ri-download-2-fill text-2xl"></i> Download ZIP
+                  </button>
+                  <div class="text-center text-[11px] text-gray-500 mt-2">ZIP stored • Click to re-download anytime</div>
+                </div>
+
+                <div class="mt-5 pt-5 border-t border-white/5">
+                  <div class="text-xs text-gray-400 mb-2">Features</div>
+                  <ul class="text-[12px] space-y-1.5 text-gray-300">
+                    <li class="flex items-center gap-1.5"><i class="ri-check-line text-emerald-400"></i> Blue stripes (top/bottom)</li>
+                    <li class="flex items-center gap-1.5"><i class="ri-check-line text-emerald-400"></i> 300 DPI print-ready</li>
+                    <li class="flex items-center gap-1.5"><i class="ri-check-line text-emerald-400"></i> Size charts embedded</li>
+                    <li class="flex items-center gap-1.5"><i class="ri-check-line text-emerald-400"></i> Auto ZIP packaging</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CODES -->
+        <div id="tab-codes" class="tab-pane">
+          <h2 class="text-2xl font-bold mb-1">License Codes</h2>
+          <p class="text-gray-400 text-sm mb-6">Generate and manage access codes</p>
+          <div class="grid lg:grid-cols-3 gap-5">
+            <div class="bg-[#0f141c] border border-white/5 rounded-2xl p-5">
+              <h3 class="font-semibold mb-3">Create Code</h3>
+              <div class="space-y-3">
+                <select id="codePlan" class="w-full bg-[#080b11] border border-white/10 rounded-xl px-3 py-2.5 text-sm">
+                  <option value="trial">Trial - ₹0</option>
+                  <option value="1m">1 Month - ₹999</option>
+                  <option value="3m">3 Month - ₹2499</option>
+                  <option value="12m">12 Month - ₹7999</option>
+                  <option value="universal">Universal - ₹4999</option>
+                </select>
+                <input id="codeClient" placeholder="Client name (optional)" class="w-full bg-[#080b11] border border-white/10 rounded-xl px-3 py-2.5 text-sm">
+                <button id="createCodeBtn" class="w-full bg-violet-600 hover:bg-violet-500 font-medium py-2.5 rounded-xl text-sm">Generate Code</button>
+              </div>
+            </div>
+            <div class="lg:col-span-2 bg-[#0f141c] border border-white/5 rounded-2xl p-5">
+              <h3 class="font-semibold mb-3">Active Codes</h3>
+              <div class="overflow-auto max-h-[360px]">
+                <table class="w-full text-sm">
+                  <thead class="text-gray-400 text-xs"><tr><th class="text-left py-2 px-2">Code</th><th class="text-left py-2 px-2">Plan</th><th class="text-left py-2 px-2">Client</th><th class="text-left py-2 px-2">Status</th></tr></thead>
+                  <tbody id="codesTable" class="divide-y divide-white/5"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PAYMENTS -->
+        <div id="tab-payments" class="tab-pane">
+          <h2 class="text-2xl font-bold mb-1">Payments</h2>
+          <p class="text-gray-400 text-sm mb-6">UPI: muhammerihan7775@oksbi • Auto QR</p>
+          <div class="bg-[#0f141c] border border-white/5 rounded-2xl overflow-hidden">
+            <div class="overflow-auto">
+              <table class="w-full text-sm">
+                <thead class="bg-white/[0.03] text-gray-400"><tr><th class="text-left px-4 py-3 font-medium">Date</th><th class="text-left px-4 py-3 font-medium">Plan</th><th class="text-left px-4 py-3 font-medium">Amount</th><th class="text-left px-4 py-3 font-medium">UTR</th><th class="text-left px-4 py-3 font-medium">Status</th><th class="text-left px-4 py-3 font-medium">Screenshot</th></tr></thead>
+                <tbody id="paymentsTable" class="divide-y divide-white/5"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- PLANS -->
+        <div id="tab-plans" class="tab-pane">
+          <h2 class="text-2xl font-bold mb-1">Pricing Plans</h2>
+          <p class="text-gray-400 text-sm mb-6">INR pricing • UPI payments only</p>
+          <div class="grid md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div class="bg-[#0f141c] border border-white/10 rounded-2xl p-5 flex flex-col"><div class="text-sm text-gray-400">Trial</div><div class="text-3xl font-bold mt-1">₹0</div><ul class="text-xs text-gray-400 mt-4 space-y-1.5 flex-1"><li>• 10 PDFs</li><li>• Watermark</li></ul><button data-plan="Trial" data-amount="0" class="buyBtn mt-4 w-full py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-sm font-medium">Start Trial</button></div>
+            <div class="bg-[#0f141c] border border-blue-500/30 rounded-2xl p-5 flex flex-col ring-1 ring-blue-500/20"><div class="text-sm text-blue-400">1 Month</div><div class="text-3xl font-bold mt-1">₹999</div><ul class="text-xs text-gray-400 mt-4 space-y-1.5 flex-1"><li>• Unlimited PDFs</li><li>• All templates</li><li>• Email support</li></ul><button data-plan="1 Month" data-amount="999" class="buyBtn mt-4 w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-sm font-semibold">Buy Now</button></div>
+            <div class="bg-[#0f141c] border border-white/10 rounded-2xl p-5 flex flex-col"><div class="text-sm text-gray-400">3 Month</div><div class="text-3xl font-bold mt-1">₹2,499</div><div class="text-[11px] text-emerald-400">Save 17%</div><ul class="text-xs text-gray-400 mt-3 space-y-1.5 flex-1"><li>• Unlimited PDFs</li><li>• Priority support</li></ul><button data-plan="3 Month" data-amount="2499" class="buyBtn mt-4 w-full py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-sm font-medium">Buy</button></div>
+            <div class="bg-[#0f141c] border border-white/10 rounded-2xl p-5 flex flex-col"><div class="text-sm text-gray-400">12 Month</div><div class="text-3xl font-bold mt-1">₹7,999</div><div class="text-[11px] text-emerald-400">Best Value</div><ul class="text-xs text-gray-400 mt-3 space-y-1.5 flex-1"><li>• Unlimited PDFs</li><li>• White-label</li></ul><button data-plan="12 Month" data-amount="7999" class="buyBtn mt-4 w-full py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-sm font-medium">Buy</button></div>
+            <div class="bg-gradient-to-b from-violet-950/40 to-[#0f141c] border border-violet-500/30 rounded-2xl p-5 flex flex-col"><div class="text-sm text-violet-300">Universal</div><div class="text-3xl font-bold mt-1">₹4,999</div><div class="text-[11px] text-violet-300">Lifetime</div><ul class="text-xs text-gray-300 mt-3 space-y-1.5 flex-1"><li>• Lifetime access</li><li>• All future updates</li></ul><button data-plan="Universal Lifetime" data-amount="4999" class="buyBtn mt-4 w-full py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-sm font-semibold">Buy Lifetime</button></div>
+          </div>
+          <div class="mt-8 bg-[#0f141c] border border-white/5 rounded-2xl p-5 max-w-2xl">
+            <h3 class="font-semibold mb-2 flex items-center gap-2"><i class="ri-qr-code-line text-cyan-400"></i> UPI Payment Details</h3>
+            <div class="flex items-center gap-4">
+              <div class="font-mono text-lg bg-[#080b11] px-4 py-2 rounded-xl border border-white/10">muhammerihan7775@oksbi</div>
+              <button id="copyUpi" class="px-3 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-xs border border-white/10">Copy</button>
+            </div>
+            <p class="text-xs text-gray-500 mt-3">After payment, upload screenshot in the payment modal. Admin will verify within 5 minutes.</p>
+          </div>
+        </div>
+
+        <!-- CLIENTS -->
+        <div id="tab-clients" class="tab-pane">
+          <div class="flex items-center justify-between mb-6">
+            <div><h2 class="text-2xl font-bold">Clients</h2><p class="text-gray-400 text-sm mt-0.5">White-label unlimited access</p></div>
+            <button id="addClientBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-xl text-sm font-medium flex items-center gap-1.5"><i class="ri-add-line"></i> New Client</button>
+          </div>
+          <div class="bg-[#0f141c] border border-white/5 rounded-2xl overflow-hidden">
+            <div class="overflow-auto">
+              <table class="w-full text-sm">
+                <thead class="bg-white/[0.03] text-gray-400"><tr><th class="text-left px-4 py-3 font-medium">Client</th><th class="text-left px-4 py-3 font-medium">Email</th><th class="text-left px-4 py-3 font-medium">Plan</th><th class="text-left px-4 py-3 font-medium">Link</th><th class="text-left px-4 py-3 font-medium">Created</th></tr></thead>
+                <tbody id="clientsTable" class="divide-y divide-white/5"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ACTIVITY -->
+        <div id="tab-activity" class="tab-pane">
+          <h2 class="text-2xl font-bold mb-1">Activity Log</h2>
+          <p class="text-gray-400 text-sm mb-6">Recent actions across the platform</p>
+          <div id="activityList" class="space-y-2"></div>
+        </div>
+
+        <!-- HISTORY -->
+        <div id="tab-history" class="tab-pane">
+          <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+            <div>
+              <h2 class="text-2xl font-bold">Generation History</h2>
+              <p class="text-gray-400 text-sm mt-0.5" id="historySubtitle">Your PDF generation records</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <select id="historyClientFilter" class="hidden bg-[#0f141c] border border-white/10 rounded-xl px-3 py-2 text-sm">
+                <option value="">All Clients</option>
+              </select>
+              <button onclick="clearHistory()" class="px-3 py-2 bg-red-600/20 hover:bg-red-600/40 border border-red-500/20 text-red-400 hover:text-white rounded-xl text-xs transition">Clear History</button>
+            </div>
+          </div>
+          <div id="historyList" class="space-y-3"></div>
+        </div>
+
+        <!-- BRANDING AI -->
+        <div id="tab-branding" class="tab-pane">
+          <h2 class="text-2xl font-bold mb-1">Branding AI</h2>
+          <p class="text-gray-400 text-sm mb-6">Generate client brand kits instantly</p>
+          <div class="grid lg:grid-cols-2 gap-5">
+            <div class="bg-[#0f141c] border border-white/5 rounded-2xl p-5">
+              <label class="text-sm text-gray-300">Brand Name</label>
+              <div class="flex gap-2 mt-1.5">
+                <input id="brandName" placeholder="Acme Sports" class="flex-1 bg-[#080b11] border border-white/10 rounded-xl px-3 py-2.5 text-sm">
+                <button id="genBrand" class="px-4 bg-violet-600 hover:bg-violet-500 rounded-xl text-sm font-medium">Generate</button>
+              </div>
+              <div id="brandOutput" class="mt-5 hidden">
+                <div class="grid grid-cols-5 gap-2 mb-4" id="palette"></div>
+                <div class="text-xs text-gray-400">Suggested tagline: <span id="tagline" class="text-gray-200"></span></div>
+              </div>
+            </div>
+            <div class="bg-[#0f141c] border border-white/5 rounded-2xl p-5">
+              <h3 class="font-semibold mb-3">White-label Tips</h3>
+              <ul class="text-sm text-gray-300 space-y-2">
+                <li>• Use ?client=NAME for instant unlimited mode</li>
+                <li>• Upload logo PNG with transparent background</li>
+                <li>• Keep jersey templates at 4500×5400px (300 DPI)</li>
+                <li>• Blue stripes auto-applied for print bleed</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- PAYMENT MODAL -->
+<div id="paymentModal" class="hidden fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+  <div class="bg-[#0f141c] border border-white/10 rounded-[24px] w-full max-w-lg shadow-2xl">
+    <div class="p-6 border-b border-white/5 flex items-center justify-between">
+      <div>
+        <h3 class="text-xl font-bold">Complete Payment</h3>
+        <p class="text-xs text-gray-400 mt-0.5"><span id="payPlan">Plan</span> • <span id="payAmount">₹0</span></p>
+      </div>
+      <button id="closePay" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center"><i class="ri-close-line"></i></button>
+    </div>
+    <div class="p-6">
+      <div class="grid md:grid-cols-2 gap-6">
+        <div class="text-center">
+          <div class="bg-white p-3 rounded-2xl inline-block">
+            <div id="qrcode" class="w-[180px] h-[180px] flex items-center justify-center"></div>
+          </div>
+          <div class="mt-3">
+            <div class="text-[11px] text-gray-500">UPI ID</div>
+            <div class="font-mono text-sm">muhammerihan7775@oksbi</div>
+          </div>
+        </div>
+        <div class="space-y-3">
+          <div>
+            <label class="text-xs text-gray-400">UTR / Transaction ID</label>
+            <input id="utrInput" placeholder="Enter 12-digit UTR" class="w-full mt-1 bg-[#080b11] border border-white/10 rounded-xl px-3 py-2.5 text-sm">
+          </div>
+          <div>
+            <label class="text-xs text-gray-400">Payment Screenshot</label>
+            <input id="screenshotInput" type="file" accept="image/*" class="w-full mt-1 bg-[#080b11] border border-white/10 rounded-xl px-3 py-2 text-sm file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-white/10 file:text-white">
+          </div>
+          <div>
+            <label class="text-xs text-gray-400">Your Email</label>
+            <input id="payerEmail" type="email" placeholder="for activation" class="w-full mt-1 bg-[#080b11] border border-white/10 rounded-xl px-3 py-2.5 text-sm">
+          </div>
+          <button id="submitPayment" class="w-full bg-emerald-600 hover:bg-emerald-500 font-semibold py-3 rounded-xl mt-2 flex items-center justify-center gap-2"><i class="ri-check-line"></i> Submit for Verification</button>
+          <p class="text-[11px] text-gray-500 text-center">Admin gets instant browser notification</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PREVIEW MODAL -->
+<div id="previewModal" class="hidden fixed inset-0 z-[110] bg-black/90 backdrop-blur-sm flex flex-col">
+  <div class="flex items-center justify-between px-6 py-4 bg-[#0a0e17] border-b border-white/10 shrink-0">
+    <div>
+      <h3 class="text-lg font-bold">PDF Preview</h3>
+      <p class="text-xs text-gray-400 mt-0.5">Previewing all 11 spec sheets for <span id="previewPlayerLabel" class="text-blue-400"></span></p>
+    </div>
+    <div class="flex items-center gap-3">
+      <select id="previewPlayerSelect" class="bg-[#0f141c] border border-white/10 rounded-xl px-3 py-2 text-sm"></select>
+      <button onclick="$('#previewModal').classList.add('hidden')" class="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center"><i class="ri-close-line text-lg"></i></button>
+    </div>
+  </div>
+  <div id="previewGrid" class="flex-1 overflow-auto p-5 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+</div>
+
+<!-- CLIENT MODAL -->
+<div id="clientModal" class="hidden fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+  <div class="bg-[#0f141c] border border-white/10 rounded-2xl w-full max-w-md p-6">
+    <h3 class="text-lg font-bold mb-4">Add New Client</h3>
+    <div class="space-y-3">
+      <input id="newClientName" placeholder="Client / Brand Name" class="w-full bg-[#080b11] border border-white/10 rounded-xl px-3 py-2.5 text-sm">
+      <input id="newClientEmail" placeholder="Email" type="email" class="w-full bg-[#080b11] border border-white/10 rounded-xl px-3 py-2.5 text-sm">
+      <div class="relative">
+        <input id="newClientPass" placeholder="Password" type="password" class="w-full bg-[#080b11] border border-white/10 rounded-xl px-3 pr-10 py-2.5 text-sm">
+        <button type="button" onclick="togglePwd('newClientPass',this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition" tabindex="-1"><i class="ri-eye-off-line text-sm"></i></button>
+      </div>
+      <select id="newClientPlan" class="w-full bg-[#080b11] border border-white/10 rounded-xl px-3 py-2.5 text-sm">
+        <option>1 Month - ₹999</option><option>3 Month - ₹2499</option><option>12 Month - ₹7999</option><option>Universal - ₹4999</option>
+      </select>
+    </div>
+    <div class="flex gap-2 mt-5">
+      <button id="cancelClient" class="flex-1 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-sm">Cancel</button>
+      <button id="saveClient" class="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-sm font-medium">Create & Get Link</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  // ===== CONFIG =====
+  const ADMIN_EMAIL = 'dhub0005@gmail.com';
+  const ADMIN_PASS = 'dhub@0005';
+  const UPI_ID = 'muhammerihan7775@oksbi';
+  
+  // ===== STATE =====
+  let currentUser = null;
+  let isClientMode = false;
+  let templates = {};
+  let players = [];
+  let lastZipBlob = null;
+  let currentPlan = {name:'', amount:0};
+
+  const ADMIN_TABS = [
+    {id:'overview',   label:'Overview',    icon:'ri-dashboard-line'},
+    {id:'generator',  label:'Generator',   icon:'ri-file-pdf-2-line'},
+    {id:'codes',      label:'Codes',       icon:'ri-key-2-line'},
+    {id:'payments',   label:'Payments',    icon:'ri-secure-payment-line'},
+    {id:'plans',      label:'Plans',       icon:'ri-vip-crown-line'},
+    {id:'clients',    label:'Clients',     icon:'ri-team-line'},
+    {id:'activity',   label:'Activity',    icon:'ri-pulse-line'},
+    {id:'history',    label:'History',     icon:'ri-history-line'},
+    {id:'branding',   label:'Branding AI', icon:'ri-sparkling-2-line'},
+  ];
+  const CLIENT_TABS = [
+    {id:'generator',  label:'Generator',   icon:'ri-file-pdf-2-line'},
+    {id:'plans',      label:'Plans',       icon:'ri-vip-crown-line'},
+    {id:'history',    label:'History',     icon:'ri-history-line'},
+  ];
+  const FILES = [
+    {key:'front', name:'Front Body', icon:'ri-t-shirt-line'},
+    {key:'back', name:'Back Body', icon:'ri-t-shirt-2-line'},
+    {key:'left', name:'Left Sleeve', icon:'ri-layout-left-line'},
+    {key:'right', name:'Right Sleeve', icon:'ri-layout-right-line'},
+    {key:'collar', name:'Collar', icon:'ri-focus-3-line'},
+    {key:'bodyChart', name:'Body Size Chart', icon:'ri-ruler-2-line'},
+    {key:'sleeveChart', name:'Sleeve Size Chart', icon:'ri-ruler-line'},
+  ];
+
+  // ===== UTILS =====
+  const $ = s => document.querySelector(s);
+  const $$ = s => document.querySelectorAll(s);
+  const store = {
+    get:k=>JSON.parse(localStorage.getItem(k)||'[]'),
+    set:(k,v)=>localStorage.setItem(k,JSON.stringify(v)),
+    push:(k,v)=>{const a=store.get(k);a.unshift(v);store.set(k,a);return a}
+  };
+  function showToast(msg,type='info'){
+    const colors={success:'border-emerald-500/30 bg-emerald-500/10 text-emerald-300',error:'border-red-500/30 bg-red-500/10 text-red-300',info:'border-blue-500/30 bg-blue-500/10 text-blue-300'};
+    const icons={success:'ri-check-line',error:'ri-error-warning-line',info:'ri-information-line'};
+    const el=document.createElement('div');
+    el.className=`toast border ${colors[type]} backdrop-blur-xl rounded-xl px-4 py-3 shadow-2xl flex items-center gap-2.5 text-sm`;
+    el.innerHTML=`<i class="${icons[type]} text-lg"></i><span>${msg}</span>`;
+    $('#toastContainer').appendChild(el);
+    setTimeout(()=>{el.style.opacity='0';el.style.transform='translateX(20px)';setTimeout(()=>el.remove(),300)},3500);
+  }
+  function togglePwd(id, btn){
+    const el = $('#'+id);
+    const icon = btn.querySelector('i');
+    if(el.type==='password'){ el.type='text'; icon.className='ri-eye-line text-base'; }
+    else { el.type='password'; icon.className='ri-eye-off-line text-base'; }
+  }
+  window.togglePwd = togglePwd;
+
+  function addActivity(m){ store.push('b7_activity',{t:Date.now(),m}); renderActivity(); }
+  function fmt(n){ return '₹'+Number(n||0).toLocaleString('en-IN') }
+  function sanitize(s){ return String(s||'player').replace(/[^a-z0-9_-]/gi,'_').slice(0,40) }
+  function dataURLtoBlob(dataURL){ const p=dataURL.split(','), m=p[0].match(/:(.*?);/)[1], b=atob(p[1]), u=new Uint8Array(b.length); for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i); return new Blob([u],{type:m}) }
+  function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') }
+
+  function isAdmin(){ return currentUser?.role==='admin' || currentUser?.email===ADMIN_EMAIL; }
+
+  function buildNav(){
+    const tabs = isAdmin() ? ADMIN_TABS : CLIENT_TABS;
+    $('#navTabs').innerHTML = tabs.map(t=>`
+      <button data-tab="${t.id}" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/[0.05] text-gray-300 hover:text-white transition text-[14px]">
+        <i class="${t.icon} text-[18px] opacity-80"></i><span>${t.label}</span>
+      </button>`).join('');
+    $$('.nav-btn').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
+    $$('.goto-btn').forEach(b=>b.onclick=()=>{
+      const allowed = isAdmin() ? ADMIN_TABS : CLIENT_TABS;
+      if(allowed.find(t=>t.id===b.dataset.goto)) switchTab(b.dataset.goto);
+    });
+  }
+
+  // ===== INIT =====
+  function init(){
+
+    // File grid
+    $('#fileGrid').innerHTML = FILES.map(f=>`
+      <label class="group relative flex items-center gap-3 p-3.5 bg-[#080b11] hover:bg-[#0c111a] border border-white/10 hover:border-white/20 rounded-xl cursor-pointer transition">
+        <input type="checkbox" data-key="${f.key}" class="file-check absolute top-2.5 right-2.5 w-4 h-4 accent-blue-500" checked>
+        <div class="w-9 h-9 rounded-lg bg-white/5 group-hover:bg-white/10 flex items-center justify-center shrink-0"><i class="${f.icon} text-gray-300"></i></div>
+        <div class="flex-1 min-w-0">
+          <div class="text-[13px] font-medium truncate">${f.name}</div>
+          <div class="text-[11px] text-gray-500">PNG / JPG</div>
+        </div>
+        <input type="file" accept="image/*" data-key="${f.key}" class="file-input absolute inset-0 opacity-0 cursor-pointer">
+      </label>`).join('');
+
+    bindEvents();
+    renderAll();
+    checkRoute();
+  }
+
+  // ===== AUTH TABS =====
+  window.switchAuthTab = function(tab){
+    const isLogin = tab === 'login';
+    $('#loginForm').classList.toggle('hidden', !isLogin);
+    $('#signupForm').classList.toggle('hidden', isLogin);
+    $('#tabLoginBtn').className = `flex-1 py-2 rounded-lg text-sm font-medium transition ${isLogin ? 'bg-white/10 text-white' : 'text-gray-400 hover:text-white'}`;
+    $('#tabSignupBtn').className = `flex-1 py-2 rounded-lg text-sm font-medium transition ${!isLogin ? 'bg-white/10 text-white' : 'text-gray-400 hover:text-white'}`;
+  };
+
+  function doSignup(){
+    const name = $('#suName').value.trim();
+    const email = $('#suEmail').value.trim().toLowerCase();
+    const phone = $('#suPhone').value.trim();
+    const pass = $('#suPassword').value;
+    if(!name || !email || !pass){ showToast('Please fill all required fields','error'); return; }
+    if(pass.length < 6){ showToast('Password must be at least 6 characters','error'); return; }
+    const users = store.get('b7_users');
+    if(users.find(u=>u.email===email)){ showToast('Email already registered','error'); return; }
+    const newUser = {name, email, pass, phone, plan:'trial', created:Date.now()};
+    users.push(newUser); store.set('b7_users', users);
+    localStorage.setItem('b7_session', JSON.stringify(newUser));
+    currentUser = newUser;
+    showApp();
+    showToast(`Welcome, ${name}! Trial account created.`,'success');
+    addActivity(`New signup: ${email}`);
+  }
+
+  function bindEvents(){
+    $('#loginForm').onsubmit = e=>{ e.preventDefault(); doLogin(); };
+    $('#signupForm').onsubmit = e=>{ e.preventDefault(); doSignup(); };
+    $('#logoutBtn').onclick = ()=>{ localStorage.removeItem('b7_session'); location.reload(); };
+    $('#excelInput').onchange = e=> handleExcel(e.target.files[0]);
+    $('#selectAllFiles').onclick = ()=>{ $$('.file-check').forEach(c=>c.checked=true); updateCounts(); };
+    $('#clearAllFiles').onclick = ()=>{ $$('.file-check').forEach(c=>c.checked=false); updateCounts(); };
+    $$('.file-input').forEach(i=> i.onchange = ev=> loadTemplate(ev));
+    $$('.file-check').forEach(c=> c.onchange = updateCounts);
+    $('#generateBtn').onclick = generatePDFs;
+    $('#previewBtn').onclick = openPreview;
+    $('#downloadZipBtn').onclick = redownload;
+    $('#clearPlayers').onclick = ()=>{ players=[]; renderPlayers(); updateCounts(); };
+    $('#historyClientFilter').onchange = ()=> renderHistory($('#historyClientFilter').value || null);
+    $('#createCodeBtn').onclick = createCode;
+    $('#copyUpi').onclick = ()=>{ navigator.clipboard.writeText(UPI_ID); showToast('UPI ID copied','success') };
+    $$('.buyBtn').forEach(b=> b.onclick=()=> openPayment(b.dataset.plan, +b.dataset.amount));
+    $('#closePay').onclick = ()=> $('#paymentModal').classList.add('hidden');
+    $('#submitPayment').onclick = submitPayment;
+    const clearClientModal = ()=>{ $('#newClientName').value=''; $('#newClientEmail').value=''; $('#newClientPass').value=''; $('#newClientPlan').selectedIndex=0; };
+    $('#addClientBtn').onclick = ()=>{ clearClientModal(); $('#clientModal').classList.remove('hidden'); };
+    $('#cancelClient').onclick = ()=>{ clearClientModal(); $('#clientModal').classList.add('hidden'); };
+    $('#saveClient').onclick = saveClient;
+    $('#genBrand').onclick = generateBrand;
+
+    // drag drop
+    const drop = $('#excelInput').parentElement;
+    drop.ondragover = e=>{e.preventDefault(); drop.classList.add('border-blue-500/70')};
+    drop.ondragleave = ()=> drop.classList.remove('border-blue-500/70');
+    drop.ondrop = e=>{ e.preventDefault(); drop.classList.remove('border-blue-500/70'); const f=e.dataTransfer.files[0]; if(f) handleExcel(f) };
+  }
+
+  function checkRoute(){
+    const p = new URLSearchParams(location.search);
+    if(p.has('client')){
+      isClientMode = true;
+      $('#loginScreen').classList.add('hidden');
+      $('#app').classList.remove('hidden');
+      $('#sidebar').classList.add('hidden');
+      $('#clientBanner').classList.remove('hidden');
+      $('#clientName').textContent = p.get('client');
+      $('#sidebarSubtitle').textContent = 'Client Mode';
+      switchTab('generator');
+      addActivity(`Client workspace opened: ${p.get('client')}`);
+      return;
+    }
+    const sess = localStorage.getItem('b7_session');
+    if(sess){
+      currentUser = sess==='admin'? {email:ADMIN_EMAIL,role:'admin'} : JSON.parse(sess);
+      showApp();
+    }
+  }
+
+  function doLogin(){
+    const email = $('#email').value.trim().toLowerCase();
+    const pass = $('#password').value;
+    if(email===ADMIN_EMAIL && pass===ADMIN_PASS){
+      localStorage.setItem('b7_session','admin');
+      currentUser={email,role:'admin'};
+      if('Notification' in window && Notification.permission==='default') Notification.requestPermission();
+      showApp();
+      addActivity('Admin login');
+      showToast('Welcome back, Admin','success');
+      return;
+    }
+    const users = store.get('b7_users');
+    const u = users.find(x=>x.email===email && x.pass===pass);
+    if(u){
+      localStorage.setItem('b7_session',JSON.stringify(u));
+      currentUser=u; showApp(); showToast('Signed in','success'); addActivity(`User login: ${email}`);
+    } else { showToast('Invalid credentials','error') }
+  }
+
+  function showApp(){
+    $('#loginScreen').classList.add('hidden');
+    $('#app').classList.remove('hidden');
+    $('#currentUserEmail').textContent = currentUser?.email || '—';
+    $('#sidebarSubtitle').textContent = isAdmin() ? 'Admin Console' : `${(currentUser?.plan||'trial').toUpperCase()} Plan`;
+    buildNav();
+    switchTab(isAdmin() ? 'overview' : 'generator');
+    renderAll();
+  }
+
+  function switchTab(id){
+    const allowed = isAdmin() ? ADMIN_TABS : CLIENT_TABS;
+    if(!allowed.find(t=>t.id===id)) return;
+    $$('.tab-pane').forEach(p=>p.classList.remove('active'));
+    $('#tab-'+id)?.classList.add('active');
+    $$('.nav-btn').forEach(b=> b.classList.toggle('bg-white/10', b.dataset.tab===id));
+  }
+
+  // ===== EXCEL PARSER =====
+  let extraFields = []; // [{key, label, col}] — extra detected columns
+
+  const EXTRA_KW_MAP = [
+    { key:'position',   label:'Position',     kw:['position','pos','role','playing','slot'] },
+    { key:'team',       label:'Team',         kw:['team','club','group','squad','school','college','org','class','section'] },
+    { key:'color',      label:'Color',        kw:['color','colour','shade','kit color','jersey color'] },
+    { key:'font',       label:'Font Style',   kw:['font','style','design','print type','pattern','printing'] },
+    { key:'qty',        label:'Qty',          kw:['qty','quantity','count','units','nos','pieces'] },
+    { key:'notes',      label:'Notes',        kw:['note','notes','remark','remarks','comment','special','instruction'] },
+    { key:'sport',      label:'Sport',        kw:['sport','game','activity','event'] },
+    { key:'fabric',     label:'Fabric',       kw:['fabric','material','cloth','textile','gsm'] },
+    { key:'collar',     label:'Collar Type',  kw:['collar','neck','neckline','collar type'] },
+    { key:'ribstyle',   label:'Rib Style',    kw:['rib','ribstyle','rib style','cuff'] },
+  ];
+
+  async function handleExcel(file){
+    if(!file) return;
+    try{
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf,{type:'array',cellText:false,cellDates:true});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false});
+
+      // ---- Step 1: Find header row ----
+      const NAME_KW  = ['name','player','fullname','full name','student','athlete','person'];
+      const NUM_KW   = ['number','no','num','jersey','shirt','kit','#'];
+      const SIZE_KW  = ['size','sz','chest','measurement','garment','clothing'];
+
+      function scoreRow(r){
+        const cells = r.map(v=> String(v||'').toLowerCase().trim()).filter(Boolean);
+        const hasName = cells.some(c=> NAME_KW.some(k=> c.includes(k)));
+        const hasNum  = cells.some(c=> NUM_KW.some(k=> c===k || c.includes(k)));
+        const hasSize = cells.some(c=> SIZE_KW.some(k=> c.includes(k)));
+        return [hasName,hasNum,hasSize].filter(Boolean).length;
+      }
+
+      let headerIdx = 0, bestScore = 0;
+      const maxScan = Math.min(30, rows.length);
+      for(let i=0;i<maxScan;i++){
+        const s = scoreRow(rows[i]||[]);
+        if(s > bestScore){ bestScore=s; headerIdx=i; }
+        if(s===3) break;
+      }
+
+      // ---- Step 2: Map core columns ----
+      const rawHeaders = (rows[headerIdx]||[]);
+      const headers = rawHeaders.map(v=> String(v||'').toLowerCase().trim());
+
+      function findCol(keywords){
+        let idx = headers.findIndex(h=> keywords.some(k=> h===k));
+        if(idx>=0) return idx;
+        idx = headers.findIndex(h=> keywords.some(k=> h.includes(k)));
+        return idx;
+      }
+
+      let nameCol = findCol(NAME_KW);
+      let numCol  = findCol(NUM_KW);
+      let sizeCol = findCol(SIZE_KW);
+
+      const dataRows = rows.slice(headerIdx+1).filter(r=> r.some(c=> String(c||'').trim()));
+
+      // ---- Step 3: Positional fallback ----
+      if(nameCol<0 || numCol<0){
+        const sample = dataRows[0]||[];
+        const strCols = [], numCols = [];
+        sample.forEach((v,i)=>{
+          const s = String(v||'').trim();
+          if(!s) return;
+          if(!isNaN(s.replace(/[^0-9.]/g,''))) numCols.push(i);
+          else strCols.push(i);
+        });
+        if(nameCol<0 && strCols.length>0) nameCol = strCols[0];
+        if(numCol<0  && numCols.length>0) numCol  = numCols[0];
+        if(sizeCol<0 && strCols.length>1) sizeCol = strCols[1];
+        if(sizeCol<0 && numCols.length>1) sizeCol = numCols[1];
+      }
+
+      // ---- Step 4: Detect EXTRA columns ----
+      const coreUsed = new Set([nameCol, numCol, sizeCol].filter(i=>i>=0));
+      extraFields = [];
+      EXTRA_KW_MAP.forEach(def=>{
+        const col = findCol(def.kw);
+        if(col >= 0 && !coreUsed.has(col)){
+          extraFields.push({key:def.key, label:def.label, col, header: rawHeaders[col]||def.label});
+          coreUsed.add(col);
+        }
+      });
+      // Also capture any remaining unrecognized non-empty columns
+      headers.forEach((h,i)=>{
+        if(!coreUsed.has(i) && h){
+          extraFields.push({key:'extra_'+i, label: String(rawHeaders[i]||'Col'+(i+1)), col:i, header: rawHeaders[i]});
+          coreUsed.add(i);
+        }
+      });
+
+      // ---- Step 5: Parse player rows ----
+      function cleanNum(v){
+        const s = String(v||'').trim();
+        const n = parseFloat(s);
+        if(!isNaN(n) && String(n)===s.replace(/\.0+$/,'')) return String(Math.round(n*100)/100);
+        return s;
+      }
+      function cleanStr(v){ return String(v||'').trim().toUpperCase(); }
+
+      players = dataRows.map(row=>{
+        const name   = nameCol>=0 ? cleanStr(row[nameCol]) : '';
+        const number = numCol>=0  ? cleanNum(row[numCol])  : '';
+        const size   = sizeCol>=0 ? String(row[sizeCol]||'').trim() : '';
+        const extras = {};
+        extraFields.forEach(ef=>{
+          extras[ef.key] = ef.col < row.length ? String(row[ef.col]||'').trim() : '';
+        });
+        return {name, number, size, extras};
+      }).filter(p=> p.name && p.name.toLowerCase()!=='none' && p.name!=='' && p.number!=='');
+
+      // ---- Step 6: Show analysis ----
+      const coreMap = [
+        {label:'Player Name', col:nameCol, header: nameCol>=0 ? rawHeaders[nameCol] : null, found: nameCol>=0},
+        {label:'Jersey #',    col:numCol,  header: numCol>=0  ? rawHeaders[numCol]  : null, found: numCol>=0},
+        {label:'Size',        col:sizeCol, header: sizeCol>=0 ? rawHeaders[sizeCol] : null, found: sizeCol>=0},
+      ];
+      renderExcelAnalysis(coreMap, extraFields, players, headerIdx);
+
+      $('#excelStatus').classList.remove('hidden');
+      $('#excelStatus').textContent = `Header at row ${headerIdx+1} • ${players.length} players • ${extraFields.length} extra field${extraFields.length!==1?'s':''} detected`;
+      showToast(`${players.length} players loaded • ${extraFields.length} extra fields`,'success');
+      renderPlayers();
+      updateCounts();
+      addActivity(`Excel parsed: ${players.length} players, ${extraFields.length} extra fields`);
+      if(players.length===0) showToast('No players found — check column names','error');
+
+    }catch(e){ console.error(e); showToast('Failed to read Excel: '+e.message,'error') }
+  }
+
+  function renderExcelAnalysis(coreMap, extras, playerList, headerIdx){
+    const el = $('#excelAnalysis');
+    el.classList.remove('hidden');
+
+    const coreHTML = coreMap.map(c=>`
+      <div class="flex items-center gap-2 text-xs">
+        <i class="${c.found?'ri-check-line text-emerald-400':'ri-close-line text-red-400'}"></i>
+        <span class="text-gray-400 w-24 shrink-0">${c.label}</span>
+        ${c.found ? `<span class="font-mono bg-white/5 px-1.5 py-0.5 rounded text-blue-300">${esc(String(c.header||''))}</span><span class="text-gray-600 ml-1">col ${c.col+1}</span>` : '<span class="text-red-400/70">not found</span>'}
+      </div>`).join('');
+
+    const extHTML = extras.length > 0
+      ? extras.map(ef=>`<span class="px-2 py-0.5 bg-violet-500/10 border border-violet-500/20 text-violet-300 rounded text-[11px]">${esc(ef.label)}</span>`).join('')
+      : '<span class="text-gray-500 text-xs">none detected</span>';
+
+    const sample = playerList[0];
+    const sampleHTML = sample ? `
+      <div class="mt-2 p-2.5 bg-[#080b11] rounded-lg border border-white/5 text-xs">
+        <div class="text-gray-500 mb-1.5 font-medium">Sample — first player</div>
+        <div class="flex flex-wrap gap-x-4 gap-y-1">
+          <span><span class="text-gray-500">Name</span> <span class="text-white font-medium">${esc(sample.name)}</span></span>
+          <span><span class="text-gray-500">#</span> <span class="text-blue-400 font-mono">${esc(sample.number)}</span></span>
+          <span><span class="text-gray-500">Size</span> <span class="text-emerald-400">${esc(sample.size||'—')}</span></span>
+          ${Object.entries(sample.extras||{}).filter(([,v])=>v).map(([k,v])=>`<span><span class="text-gray-500">${esc(k)}</span> <span class="text-gray-200">${esc(v)}</span></span>`).join('')}
+        </div>
+      </div>` : '';
+
+    el.innerHTML = `
+      <div class="p-3 bg-[#080b11] border border-white/5 rounded-xl">
+        <div class="text-xs font-semibold text-gray-300 mb-2 flex items-center gap-2"><i class="ri-bar-chart-2-line text-blue-400"></i> Column Analysis</div>
+        <div class="space-y-1.5 mb-3">${coreHTML}</div>
+        <div class="border-t border-white/5 pt-2.5">
+          <div class="text-[11px] text-gray-500 mb-1.5">Extra fields detected</div>
+          <div class="flex flex-wrap gap-1.5">${extHTML}</div>
+        </div>
+        ${sampleHTML}
+      </div>`;
+
+    $('#extraFieldsCount').textContent = extras.length > 0 ? `${extras.length} fields` : '0';
+  }
+
+  function loadTemplate(ev){
+    const file = ev.target.files[0]; if(!file) return;
+    const key = ev.target.dataset.key;
+    const rd = new FileReader();
+    rd.onload = e=>{ templates[key]=e.target.result; showToast(`${FILES.find(f=>f.key===key).name} loaded`,'success'); updateCounts(); };
+    rd.readAsDataURL(file);
+  }
+
+  function renderPlayers(){
+    const tb = $('#playerTable');
+    tb.innerHTML = players.map(p=>`<tr class="hover:bg-white/[0.02]"><td class="px-3 py-2">${p.name||'—'}</td><td class="px-3 py-2">${p.number||'—'}</td><td class="px-3 py-2">${p.size||'—'}</td></tr>`).join('');
+    $('#playerCount').textContent = players.length;
+    $('#plyCount').textContent = players.length;
+    $('#emptyPlayers').classList.toggle('hidden', players.length>0);
+    $('#generateBtn').disabled = players.length===0;
+  }
+
+  function updateCounts(){
+    const sel = $$('.file-check:checked').length;
+    $('#tplCount').textContent = `${sel}/7`;
+    $('#generateText').textContent = `Generate PDFs (${sel} templates)`;
+    const ok = players.length > 0 && sel > 0;
+    $('#generateBtn').disabled = !ok;
+    $('#previewBtn').disabled = players.length === 0;
+  }
+
+  // ===== PDF GENERATION =====
+  // 11 PDF categories matching the required output structure
+  const PDF_CATEGORIES = [
+    { key:'ORDER_NAME',             label:'Order Name',             tmpl:'front'  },
+    { key:'DESIGN_STYLE',           label:'Design Style',           tmpl:'front'  },
+    { key:'COLLAR_STYLE',           label:'Collar Style',           tmpl:'collar' },
+    { key:'NECK_OPTION',            label:'Neck Option',            tmpl:'collar' },
+    { key:'DESIGNER_NAME',          label:'Designer Name',          tmpl:'front'  },
+    { key:'FABRIC_TYPE',            label:'Fabric Type',            tmpl:'back'   },
+    { key:'GAME__SPORT',            label:'Game Sport',             tmpl:'front'  },
+    { key:'GARMENT_SPECIFICATIONS', label:'Garment Specifications', tmpl:'body'   },
+    { key:'PRINTING_SETUP',         label:'Printing Setup',         tmpl:'back'   },
+    { key:'PRODUCT_TYPE',           label:'Product Type',           tmpl:'front'  },
+    { key:'RIB_STYLE',              label:'Rib Style',              tmpl:'sleeve' },
+  ];
+
+  // Safe filename: replace every character that JSZip or Windows treats as a path/special char
+  function safeFilename(s){ return String(s||'').replace(/[/\\:*?"<>|]/g,'_').replace(/\s+/g,'_').replace(/_+/g,'_'); }
+
+  function makeCategoryPDF(p, cat, selected){
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({orientation:'landscape', unit:'mm', format:'a4', compress:true});
+
+    // Header stripe
+    pdf.setFillColor(37,99,235); pdf.rect(0,0,297,12,'F');
+    pdf.setTextColor(255); pdf.setFontSize(9);
+    pdf.text('Bupreme v7  •  300 DPI Print Ready', 8, 7.5);
+    pdf.setFont('helvetica','bold'); pdf.setFontSize(10);
+    pdf.text(cat.label.toUpperCase(), 289, 7.5, {align:'right'});
+
+    // Footer stripe
+    pdf.setFillColor(37,99,235); pdf.rect(0,198,297,12,'F');
+    pdf.setTextColor(255); pdf.setFont('helvetica','normal'); pdf.setFontSize(8);
+    pdf.text(`${String(p.name||'').toUpperCase()}  •  #${p.number||'00'}  •  ${p.size||'M'}`, 148.5, 204.5, {align:'center'});
+
+    // Resolve template image to use
+    let imgData = null;
+    if(cat.tmpl === 'body')   imgData = selected.bodyChart || selected.front || null;
+    else if(cat.tmpl === 'sleeve') imgData = selected.left || selected.right || selected.front || null;
+    else if(cat.tmpl === 'collar') imgData = selected.collar || selected.front || null;
+    else if(cat.tmpl === 'back')   imgData = selected.back  || selected.front || null;
+    else                           imgData = selected.front || selected.back  || null;
+
+    // Left: template image
+    if(imgData){
+      try{ pdf.addImage(imgData,'PNG',14,16,110,170,undefined,'FAST'); }catch{}
+    } else {
+      // placeholder box
+      pdf.setFillColor(20,30,45); pdf.rect(14,16,110,170,'F');
+      pdf.setTextColor(80,100,130); pdf.setFontSize(10);
+      pdf.text('No template uploaded', 69, 100, {align:'center'});
+    }
+
+    // Vertical divider
+    pdf.setDrawColor(40,60,90); pdf.setLineWidth(0.4); pdf.line(132,16,132,186);
+
+    // Right: player info
+    const rx = 145;
+    pdf.setTextColor(15,23,42);
+    pdf.setFont('helvetica','bold'); pdf.setFontSize(9);
+    pdf.setTextColor(100,120,160); pdf.text('PLAYER NAME', rx, 30);
+    pdf.setFont('helvetica','bold'); pdf.setFontSize(28); pdf.setTextColor(15,23,42);
+    pdf.text(String(p.name||'PLAYER').toUpperCase(), rx, 44);
+
+    pdf.setFont('helvetica','bold'); pdf.setFontSize(9); pdf.setTextColor(100,120,160);
+    pdf.text('NUMBER', rx, 62);
+    pdf.setFont('helvetica','bold'); pdf.setFontSize(48); pdf.setTextColor(37,99,235);
+    pdf.text(String(p.number||'00'), rx, 82);
+
+    pdf.setFont('helvetica','bold'); pdf.setFontSize(9); pdf.setTextColor(100,120,160);
+    pdf.text('SIZE', rx, 100);
+    pdf.setFont('helvetica','bold'); pdf.setFontSize(22); pdf.setTextColor(15,23,42);
+    pdf.text(String(p.size||'M'), rx, 114);
+
+    // Category box
+    pdf.setFillColor(37,99,235); pdf.roundedRect(rx-2, 130, 145, 22, 3, 3, 'F');
+    pdf.setTextColor(255); pdf.setFont('helvetica','bold'); pdf.setFontSize(11);
+    pdf.text(cat.label.toUpperCase(), rx+70, 144.5, {align:'center'});
+
+    // For GARMENT_SPECIFICATIONS: rebuild as a side-by-side size-chart page
+    if(cat.key === 'GARMENT_SPECIFICATIONS' && (selected.bodyChart || selected.sleeveChart)){
+      const spec = new jsPDF({orientation:'landscape', unit:'mm', format:'a4', compress:true});
+      spec.setFillColor(37,99,235); spec.rect(0,0,297,12,'F');
+      spec.setTextColor(255); spec.setFont('helvetica','bold'); spec.setFontSize(10);
+      spec.text('GARMENT SPECIFICATIONS', 148.5, 7.5, {align:'center'});
+      spec.setFillColor(37,99,235); spec.rect(0,198,297,12,'F');
+      spec.setTextColor(255); spec.setFont('helvetica','normal'); spec.setFontSize(8);
+      spec.text(`${String(p.name||'').toUpperCase()}  •  #${p.number||'00'}  •  ${p.size||'M'}`, 148.5, 204.5, {align:'center'});
+      if(selected.bodyChart   && selected.sleeveChart){
+        try{ spec.addImage(selected.bodyChart,  'PNG', 14, 16, 130, 170, undefined,'FAST'); }catch{}
+        try{ spec.addImage(selected.sleeveChart,'PNG',152, 16, 130, 170, undefined,'FAST'); }catch{}
+      } else if(selected.bodyChart){
+        try{ spec.addImage(selected.bodyChart,  'PNG', 14, 16, 265, 170, undefined,'FAST'); }catch{}
+      } else if(selected.sleeveChart){
+        try{ spec.addImage(selected.sleeveChart,'PNG', 14, 16, 265, 170, undefined,'FAST'); }catch{}
+      }
+      return spec.output('blob');
+    }
+
+    return pdf.output('blob');
+  }
+
+  async function generatePDFs(){
+    if(players.length===0) return;
+    const mainZip = new JSZip();
+    let playerCount = 0;
+
+    $('#generateBtn').disabled = true;
+    $('#generateBtn').innerHTML = `<i class="ri-loader-4-line animate-spin"></i> Rendering...`;
+
+    const selected = {};
+    $$('.file-check:checked').forEach(c=>{ const k=c.dataset.key; if(templates[k]) selected[k]=templates[k]; });
+
+    for(const p of players){
+      const slug = `${sanitize(p.name)}_${sanitize(p.number)}`;
+      const playerZip = new JSZip();
+
+      for(const cat of PDF_CATEGORIES){
+        const blob = makeCategoryPDF(p, cat, selected);
+        const pdfName = `${safeFilename(cat.key)}_${safeFilename(cat.label)}_${slug}.pdf`;
+        playerZip.file(pdfName, blob);
+      }
+
+      const playerZipBlob = await playerZip.generateAsync({type:'blob'});
+      mainZip.file(`${slug}.zip`, playerZipBlob);
+      playerCount++;
+    }
+
+    const zipBlob = await mainZip.generateAsync({type:'blob'});
+    lastZipBlob = zipBlob;
+    window.lastZipBlob = zipBlob;
+
+    const url = URL.createObjectURL(zipBlob);
+    const a = document.createElement('a');
+    a.href=url; a.download=`Bupreme-v7-Jerseys-${Date.now()}.zip`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),4000);
+
+    $('#downloadContainer').classList.remove('hidden');
+    $('#generateBtn').disabled = false;
+    $('#generateBtn').innerHTML = `<i class="ri-flashlight-line"></i> <span id="generateText">Generate PDFs</span>`;
+    updateCounts();
+
+    const totalFiles = playerCount * PDF_CATEGORIES.length;
+    showToast(`✅ ${playerCount} player ZIPs • ${totalFiles} PDFs • Downloaded`,'success');
+    addActivity(`Generated ${playerCount} player ZIPs (${totalFiles} PDFs)`);
+    const newTotal = parseInt(localStorage.getItem('b7_total_pdfs')||'0') + playerCount;
+    localStorage.setItem('b7_total_pdfs', newTotal);
+    $('#statPDF').textContent = newTotal;
+
+    // Save to generation history
+    store.push('b7_gen_history', {
+      id: Date.now().toString(),
+      email: currentUser?.email || 'unknown',
+      name: currentUser?.name || currentUser?.email || 'unknown',
+      timestamp: Date.now(),
+      playerCount,
+      players: players.map(p=>({name:p.name, number:p.number, size:p.size}))
+    });
+    renderHistory();
+  }
+
+  function redownload(){
+    if(!lastZipBlob){ showToast('Generate first','error'); return; }
+    const url = URL.createObjectURL(lastZipBlob);
+    const a = document.createElement('a'); a.href=url; a.download='Bupreme-v7-ReDownload.zip'; a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),2000);
+    showToast('ZIP re-downloaded','success');
+  }
+
+  // ===== PAYMENTS =====
+  function openPayment(plan, amount){
+    currentPlan = {name:plan, amount};
+    $('#payPlan').textContent = plan;
+    $('#payAmount').textContent = fmt(amount);
+    $('#utrInput').value = '';
+    $('#screenshotInput').value = '';
+    $('#payerEmail').value = currentUser?.email || '';
+    $('#qrcode').innerHTML='';
+    const upi = `upi://pay?pa=${UPI_ID}&pn=Bupreme&am=${amount}&cu=INR&tn=Bupreme ${plan}`;
+    new QRCode($('#qrcode'), {text:upi, width:200, height:200, colorDark:'#000000', colorLight:'#ffffff', correctLevel:QRCode.CorrectLevel.L});
+    $('#paymentModal').classList.remove('hidden');
+  }
+
+  async function submitPayment(){
+    const utr = $('#utrInput').value.trim();
+    const email = $('#payerEmail').value.trim();
+    const file = $('#screenshotInput').files[0];
+    if(!utr || !email || !file){ showToast('Fill UTR, email & screenshot','error'); return; }
+    const reader = new FileReader();
+    reader.onload = e=>{
+      const pay = { id:'PAY'+Date.now(), date:new Date().toISOString(), plan:currentPlan.name, amount:currentPlan.amount, utr, email, screenshot:e.target.result, status:'pending' };
+      store.push('b7_payments', pay);
+      $('#paymentModal').classList.add('hidden');
+      showToast('Payment submitted • Verifying','success');
+      addActivity(`New payment: ${currentPlan.name} ${fmt(currentPlan.amount)}`);
+      renderPayments();
+      // Browser notification for admin
+      if('Notification' in window && Notification.permission==='granted'){
+        new Notification('Bupreme v7 - New Payment', { body:`${currentPlan.name} • ${fmt(currentPlan.amount)} • UTR ${utr}`, icon:'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f4b0.png' });
+      }
+      $('#statPending').textContent = store.get('b7_payments').filter(p=>p.status==='pending').length;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // ===== CODES / CLIENTS / RENDERS =====
+  function createCode(){
+    const plan = $('#codePlan').value;
+    const client = $('#codeClient').value.trim();
+    const code = 'BP7-'+Math.random().toString(36).slice(2,6).toUpperCase()+'-'+Math.random().toString(36).slice(2,6).toUpperCase();
+    store.push('b7_codes',{code,plan,client,status:'active',created:Date.now()});
+    showToast(`Code created: ${code}`,'success'); addActivity(`Code ${code} (${plan})`); renderCodes();
+  }
+
+  function saveClient(){
+    const name = $('#newClientName').value.trim();
+    const email = $('#newClientEmail').value.trim().toLowerCase();
+    const pass = $('#newClientPass').value.trim();
+    const plan = $('#newClientPlan').value;
+    if(!name || !email || !pass){ showToast('Fill all fields','error'); return; }
+    const users = store.get('b7_users');
+    if(users.find(u=>u.email===email)){ showToast('Email exists','error'); return; }
+    users.push({name,email,pass,plan,created:Date.now()}); store.set('b7_users',users);
+    $('#clientModal').classList.add('hidden');
+    $('#newClientName').value=''; $('#newClientEmail').value=''; $('#newClientPass').value=''; $('#newClientPlan').selectedIndex=0;
+    const link = `${location.origin}${location.pathname}?client=${encodeURIComponent(name)}`;
+    navigator.clipboard.writeText(link);
+    showToast('Client created • Link copied','success'); addActivity(`Client added: ${name}`); renderClients();
+    $('#statClients').textContent = store.get('b7_users').length;
+  }
+
+  function generateBrand(){
+    const name = $('#brandName').value.trim()||'Bupreme';
+    const hash = [...name].reduce((a,c)=>a+c.charCodeAt(0),0);
+    const hues = [ (hash*37)%360, (hash*73)%360, (hash*101)%360, (hash*151)%360, (hash*193)%360 ];
+    $('#palette').innerHTML = hues.map(h=>`<div class="h-12 rounded-lg border-white/10" style="background:hsl(${h} 80% 55%)"></div>`).join('');
+    $('#tagline').textContent = `${name} — Engineered for Champions`;
+    $('#brandOutput').classList.remove('hidden');
+    addActivity(`Branding generated: ${name}`);
+  }
+
+  // ===== PAYMENT APPROVE / REJECT =====
+  window.approvePayment = function(id){
+    const payments = store.get('b7_payments');
+    const p = payments.find(x=>x.id===id); if(!p) return;
+    p.status = 'approved';
+    store.set('b7_payments', payments);
+    renderPayments(); renderAll();
+    addActivity(`Payment approved: ${p.plan} ${fmt(p.amount)} (UTR ${p.utr})`);
+    showToast('Payment approved','success');
+  };
+  window.rejectPayment = function(id){
+    const payments = store.get('b7_payments');
+    const p = payments.find(x=>x.id===id); if(!p) return;
+    p.status = 'rejected';
+    store.set('b7_payments', payments);
+    renderPayments(); renderAll();
+    addActivity(`Payment rejected: ${p.plan} ${fmt(p.amount)} (UTR ${p.utr})`);
+    showToast('Payment rejected','info');
+  };
+
+  function renderAll(){
+    renderPlayers(); updateCounts(); renderCodes(); renderPayments(); renderClients(); renderActivity(); renderHistory();
+    if(isAdmin()){
+      $('#statClients').textContent = store.get('b7_users').length;
+      const rev = store.get('b7_payments').filter(p=>p.status==='approved').reduce((s,p)=>s+p.amount,0);
+      $('#statRevenue').textContent = fmt(rev);
+      $('#statPending').textContent = store.get('b7_payments').filter(p=>p.status==='pending').length;
+      const totalPDFs = parseInt(localStorage.getItem('b7_total_pdfs')||'0');
+      $('#statPDF').textContent = totalPDFs;
+    }
+  }
+
+  // ===== HISTORY =====
+  function renderHistory(filterEmail){
+    const allHistory = store.get('b7_gen_history');
+
+    if(isAdmin()){
+      $('#historySubtitle').textContent = 'All clients\u2019 PDF generation records';
+      $('#historyClientFilter').classList.remove('hidden');
+      // Rebuild filter options
+      const emails = [...new Set(allHistory.map(h=>h.email))];
+      const sel = $('#historyClientFilter');
+      const currentVal = filterEmail || sel.value || '';
+      sel.innerHTML = `<option value="">All Clients</option>` + emails.map(e=>`<option value="${esc(e)}" ${e===currentVal?'selected':''}>${esc(e)}</option>`).join('');
+    } else {
+      $('#historySubtitle').textContent = 'Your PDF generation records';
+      $('#historyClientFilter').classList.add('hidden');
+    }
+
+    const email = isAdmin() ? (filterEmail ?? ($('#historyClientFilter').value||null)) : currentUser?.email;
+    const rows = email ? allHistory.filter(h=>h.email===email) : allHistory;
+
+    if(rows.length === 0){
+      $('#historyList').innerHTML = `<div class="text-center py-16 text-gray-500"><i class="ri-history-line text-4xl block mb-3 opacity-30"></i><div class="text-sm">No generation history yet</div></div>`;
+      return;
+    }
+
+    $('#historyList').innerHTML = rows.map(h=>`
+      <div class="bg-[#0f141c] border border-white/5 rounded-2xl p-5">
+        <div class="flex items-start justify-between gap-3 flex-wrap">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-blue-600/20 border border-blue-500/20 flex items-center justify-center shrink-0">
+              <i class="ri-file-pdf-2-line text-blue-400 text-lg"></i>
+            </div>
+            <div>
+              <div class="font-semibold">${isAdmin() ? `<span class="text-blue-400 text-xs mr-2">${esc(h.email)}</span>` : ''}${h.playerCount} player${h.playerCount!==1?'s':''} • ${h.playerCount * 11} PDFs</div>
+              <div class="text-xs text-gray-500 mt-0.5">${new Date(h.timestamp).toLocaleString()}</div>
+            </div>
+          </div>
+          <span class="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 text-xs border border-emerald-500/20">${h.playerCount * 11} files</span>
+        </div>
+        <div class="mt-4 flex flex-wrap gap-2">
+          ${h.players.map(p=>`<div class="flex items-center gap-1.5 px-2.5 py-1.5 bg-white/[0.04] border border-white/[0.06] rounded-lg text-xs"><span class="font-medium">${esc(p.name)}</span><span class="text-gray-500">#${esc(p.number)}</span><span class="text-gray-600 bg-white/10 rounded px-1">${esc(p.size||'M')}</span></div>`).join('')}
+        </div>
+      </div>`).join('');
+  }
+
+  window.clearHistory = function(){
+    if(!confirm('Clear all history records? This cannot be undone.')) return;
+    if(isAdmin()){
+      store.set('b7_gen_history', []);
+    } else {
+      const email = currentUser?.email;
+      store.set('b7_gen_history', store.get('b7_gen_history').filter(h=>h.email!==email));
+    }
+    renderHistory();
+    showToast('History cleared','info');
+  };
+
+  // ===== PDF PREVIEW =====
+  function openPreview(){
+    if(players.length===0){ showToast('No players loaded','error'); return; }
+    const sel = $('#previewPlayerSelect');
+    sel.innerHTML = players.map((p,i)=>`<option value="${i}">${esc(p.name)} #${esc(p.number)}</option>`).join('');
+    sel.onchange = ()=> renderPreviewPDFs(+sel.value);
+    $('#previewModal').classList.remove('hidden');
+    renderPreviewPDFs(0);
+  }
+
+  function renderPreviewPDFs(playerIdx){
+    const p = players[playerIdx];
+    if(!p) return;
+    $('#previewPlayerLabel').textContent = `${p.name} #${p.number}`;
+    $('#previewGrid').innerHTML = `<div class="col-span-full text-center py-10 text-gray-400 text-sm"><i class="ri-loader-4-line animate-spin text-2xl block mb-2"></i>Generating previews…</div>`;
+
+    const selected = {};
+    $$('.file-check:checked').forEach(c=>{ const k=c.dataset.key; if(templates[k]) selected[k]=templates[k]; });
+
+    // Revoke previous preview blob URLs
+    if(window._previewUrls){ window._previewUrls.forEach(u=>URL.revokeObjectURL(u)); }
+    window._previewUrls = [];
+
+    setTimeout(()=>{
+      const cards = PDF_CATEGORIES.map(cat=>{
+        const blob = makeCategoryPDF(p, cat, selected);
+        const url = URL.createObjectURL(blob);
+        window._previewUrls.push(url);
+        return `<div class="bg-[#0f141c] border border-white/5 rounded-2xl overflow-hidden flex flex-col">
+          <div class="bg-[#080b11] border-b border-white/5 px-3 py-2 flex items-center justify-between">
+            <span class="text-xs font-medium text-blue-300">${esc(cat.label)}</span>
+            <a href="${url}" download="${esc(cat.key)}_${esc(p.name)}_${esc(p.number)}.pdf" class="text-xs text-gray-400 hover:text-white"><i class="ri-download-line"></i></a>
+          </div>
+          <embed src="${url}" type="application/pdf" class="w-full h-[280px] bg-white"></embed>
+        </div>`;
+      });
+      $('#previewGrid').innerHTML = cards.join('');
+    }, 80);
+  }
+
+  function renderCodes(){
+    const rows = store.get('b7_codes').slice(0,50);
+    $('#codesTable').innerHTML = rows.map(c=>`<tr>
+      <td class="px-2 py-2 font-mono text-xs">${esc(c.code)}</td>
+      <td class="px-2 py-2">${esc(c.plan)}</td>
+      <td class="px-2 py-2">${esc(c.client)||'—'}</td>
+      <td class="px-2 py-2"><span class="px-2 py-0.5 rounded text-[11px] ${c.status==='active'?'bg-emerald-500/15 text-emerald-300':'bg-gray-500/15 text-gray-300'}">${esc(c.status)}</span></td>
+    </tr>`).join('') || `<tr><td colspan="4" class="text-center py-6 text-gray-500">No codes yet</td></tr>`;
+  }
+
+  function renderPayments(){
+    const rows = store.get('b7_payments');
+    const statusClass = s => s==='pending'?'bg-amber-500/15 text-amber-300 border border-amber-500/20': s==='approved'?'bg-emerald-500/15 text-emerald-300 border border-emerald-500/20':'bg-red-500/15 text-red-300 border border-red-500/20';
+    $('#paymentsTable').innerHTML = rows.map(p=>`
+      <tr class="hover:bg-white/[0.02]">
+        <td class="px-4 py-2.5 text-xs text-gray-400">${new Date(p.date).toLocaleString()}</td>
+        <td class="px-4 py-2.5">${esc(p.plan)}</td>
+        <td class="px-4 py-2.5 font-medium">${fmt(p.amount)}</td>
+        <td class="px-4 py-2.5 font-mono text-xs">${esc(p.utr)}</td>
+        <td class="px-4 py-2.5"><span class="px-2 py-1 rounded-lg text-[11px] ${statusClass(p.status)}">${esc(p.status)}</span></td>
+        <td class="px-4 py-2.5 flex items-center gap-2">
+          <button onclick="viewScreenshot('${esc(p.id)}')" class="text-blue-400 hover:underline text-xs">View</button>
+          ${isAdmin() && p.status==='pending' ? `<button onclick="approvePayment('${esc(p.id)}')" class="text-xs px-2 py-0.5 bg-emerald-600 hover:bg-emerald-500 rounded text-white">Approve</button><button onclick="rejectPayment('${esc(p.id)}')" class="text-xs px-2 py-0.5 bg-red-600 hover:bg-red-500 rounded text-white">Reject</button>` : ''}
+        </td>
+      </tr>`).join('') || `<tr><td colspan="6" class="text-center py-10 text-gray-500">No payments yet</td></tr>`;
+  }
+
+  window.viewScreenshot = function(id){
+    const p = store.get('b7_payments').find(x=>x.id===id);
+    if(p?.screenshot){ const w=window.open(); w.document.write(`<img src="${p.screenshot}" style="max-width:100%">`); }
+  };
+
+  window.deleteClient = function(email){
+    if(!confirm(`Delete client ${email}? This cannot be undone.`)) return;
+    const users = store.get('b7_users').filter(u=>u.email!==email);
+    store.set('b7_users', users);
+    renderClients();
+    $('#statClients').textContent = users.length;
+    addActivity(`Client deleted: ${email}`);
+    showToast('Client deleted','info');
+  };
+
+  function renderClients(){
+    const rows = store.get('b7_users');
+    $('#clientsTable').innerHTML = rows.map(u=>`
+      <tr class="hover:bg-white/[0.02]">
+        <td class="px-4 py-2.5 font-medium">${esc(u.name)}</td>
+        <td class="px-4 py-2.5 text-gray-300">${esc(u.email)}</td>
+        <td class="px-4 py-2.5 text-xs">${esc(u.plan)}</td>
+        <td class="px-4 py-2.5"><a href="?client=${encodeURIComponent(u.name)}" target="_blank" class="text-cyan-400 hover:underline text-xs">Open Workspace</a></td>
+        <td class="px-4 py-2.5 text-xs text-gray-500">${new Date(u.created).toLocaleDateString()}</td>
+        <td class="px-4 py-2.5"><button onclick="deleteClient('${esc(u.email)}')" class="text-xs px-2 py-0.5 bg-red-600/20 hover:bg-red-600 border border-red-500/30 text-red-400 hover:text-white rounded transition">Delete</button></td>
+      </tr>`).join('') || `<tr><td colspan="6" class="text-center py-10 text-gray-500">No clients yet</td></tr>`;
+  }
+
+  function renderActivity(){
+    const acts = store.get('b7_activity').slice(0,40);
+    $('#activityList').innerHTML = acts.map(a=>`
+      <div class="flex items-center gap-3 p-3 bg-[#0f141c] border border-white/5 rounded-xl">
+        <div class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0"><i class="ri-pulse-line text-gray-400"></i></div>
+        <div class="flex-1 min-w-0"><div class="text-sm truncate">${esc(a.m)}</div><div class="text-[11px] text-gray-500">${new Date(a.t).toLocaleString()}</div></div>
+      </div>`).join('') || `<div class="text-center py-10 text-gray-500 text-sm">No activity yet</div>`;
+  }
+
+  // Start
+  document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+
+<!-- OFFLINE BANNER -->
+<div id="offlineBanner" class="fixed top-0 left-0 right-0 bg-red-600 text-white text-center py-2 text-sm font-medium z-[300] hidden">You are offline – changes will sync when back online</div>
+<script>
+window.addEventListener('offline', ()=> document.getElementById('offlineBanner').classList.remove('hidden'));
+window.addEventListener('online', ()=> document.getElementById('offlineBanner').classList.add('hidden'));
+</script>
+
+<script>
+// Ctrl+G shortcut
+document.addEventListener("keydown", e=>{ if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==="g"){ e.preventDefault(); const btn=document.getElementById("generateBtn"); if(btn && !btn.disabled) btn.click(); } if(e.key==="Escape"){ document.querySelectorAll(".modal").forEach(m=>m.classList.add("hidden")); } });
+</script>
+</body>
+</html>
